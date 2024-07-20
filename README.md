@@ -217,7 +217,7 @@ Allows authenticated users to borrow money. Updates the purchase power amount an
   	cd repository-name
 ```
 
-3. **Install Dependencies: **
+3. **Install Dependencies:**
 
 ```sh
   	npm Install
