@@ -29,6 +29,9 @@ router.post("/", async (req, res) => {
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Set initial purchase power amount (2 times monthly salary simialr to some credit card companies)
+        const initialPurchasePowerAmount = monthlySalary * 2;
+
         // Create a new user object
         const user = new User({
             phone,
@@ -39,7 +42,7 @@ router.post("/", async (req, res) => {
             monthlySalary,
             password: hashedPassword,
             status: "approved",
-            purchasePowerAmount: 50000,
+            purchasePowerAmount: initialPurchasePowerAmount,
             totalBorrowAmount: 0,
         });
 

@@ -6,9 +6,19 @@ const authMiddleware = require("../middleware/auth");
 
 // Route to handle borrowing requests
 router.post("/", authMiddleware, async (req, res) => {
-    const { borrowAmount } = req.body;
+    const { borrowAmount, tenure } = req.body;
 
     try {
+        // Set default tenure if not provided
+        const loanTenure = tenure || 12; // Default to 12 months
+
+        // Validate tenure
+        if (loanTenure <= 0) {
+            return res
+                .status(400)
+                .json({ message: "Invalid tenure. Must be greater than 0." });
+        }
+
         // Find user by ID from the auth token
         const user = await User.findById(req.userId);
         if (!user) {
@@ -18,10 +28,14 @@ router.post("/", authMiddleware, async (req, res) => {
         // Update user's purchase power amount
         user.purchasePowerAmount -= borrowAmount;
 
-        // Calculate monthly repayment with interest
-        const interestRate = 0.08;
-        const tenure = 12; // 12 months
-        const monthlyRepayment = (borrowAmount * (1 + interestRate)) / tenure;
+        // Calculate monthly repayment with compound interest
+        const annualInterestRate = 0.08; // 8% annual interest rate
+        const monthlyInterestRate = annualInterestRate / 12; // Convert to monthly interest rate
+        const monthlyRepayment =
+            (borrowAmount *
+                (monthlyInterestRate *
+                    Math.pow(1 + monthlyInterestRate, loanTenure))) /
+            (Math.pow(1 + monthlyInterestRate, loanTenure) - 1);
 
         // Save the updated user data
         await user.save();
@@ -29,7 +43,7 @@ router.post("/", authMiddleware, async (req, res) => {
         // Respond with the updated purchase power amount and monthly repayment
         res.status(200).json({
             purchasePowerAmount: user.purchasePowerAmount,
-            monthlyRepayment,
+            monthlyRepayment: monthlyRepayment.toFixed(2), // Format to 2 decimal places
         });
     } catch (error) {
         // Handle internal server error
